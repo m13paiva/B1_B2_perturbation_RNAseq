@@ -7,6 +7,7 @@ library(tibble)
 library(ggplot2)
 library(patchwork)
 library(pheatmap)
+library(cowplot)
 
 # paths
 samples_file <- "/home/m13paiva/Desktop/rna_seq_tese/circadian_rythm/samples_filtered.tsv"
@@ -14,6 +15,7 @@ txi_file <- "/home/m13paiva/Desktop/rna_seq_tese/circadian_rythm/PRJNA601442/txi
 targets_file <- "/home/m13paiva/Desktop/rna_seq_tese/circadian_rythm/targets.tsv"
 out_dir <- "/home/m13paiva/Desktop/rna_seq_tese/circadian_rythm/plots"
 pub_dir <- "/home/m13paiva/Desktop/rna_seq_tese/circadian_rythm/plots/publication_figures"
+thesis_fig_dir <- "/home/m13paiva/Desktop/tese_template/5-Figures/Results"
 out_tsv <- "/home/m13paiva/Desktop/rna_seq_tese/circadian_rythm/thiamine_targets_deseq2_results.tsv"
 
 # load samples and txi
@@ -250,17 +252,28 @@ panelB <- make_panel(
 )
 
 panelC <- make_panel(
-  gene_order = c("OsGLK1", "OsPIL13", "OsADK2"),
-  color_map  = c("OsGLK1" = "#009E73", "OsPIL13" = "#D55E00", "OsADK2" = "#7570B3"),
-  shape_map  = c("OsGLK1" = 21, "OsPIL13" = 24, "OsADK2" = 22),
+  gene_order = c("OsGLK1", "OsPIL13"),
+  color_map  = c("OsGLK1" = "#009E73", "OsPIL13" = "#D55E00"),
+  shape_map  = c("OsGLK1" = 21, "OsPIL13" = 24),
   is_bottom  = TRUE,
   show_labels = FALSE
 )
 
-p_3panel <- (panelA / panelB / panelC) + plot_layout(heights = c(1, 1, 1))
 
-ggsave(file.path(pub_dir, "main_fig_timecourse_3panels.pdf"), plot = p_3panel, width = 4.8, height = 9.5)
-ggsave(file.path(pub_dir, "main_fig_timecourse_3panels.png"), plot = p_3panel, width = 4.8, height = 9.5, dpi = 300)
+lbl1 <- ggdraw() + draw_label("(I)",   fontfamily = "serif", fontface = "plain", size = 18, x = 0.5, y = 0.55)
+lbl2 <- ggdraw() + draw_label("(II)",  fontfamily = "serif", fontface = "plain", size = 18, x = 0.5, y = 0.55)
+lbl3 <- ggdraw() + draw_label("(III)", fontfamily = "serif", fontface = "plain", size = 18, x = 0.5, y = 0.59)
+
+row1 <- plot_grid(lbl1, panelA, ncol = 2, rel_widths = c(0.10, 0.90))
+row2 <- plot_grid(lbl2, panelB, ncol = 2, rel_widths = c(0.10, 0.90))
+row3 <- plot_grid(lbl3, panelC, ncol = 2, rel_widths = c(0.10, 0.90))
+
+p_3panel <- plot_grid(row1, row2, row3, ncol = 1, rel_heights = c(1, 1, 1))
+
+for (d in c(pub_dir, out_dir, thesis_fig_dir)) {
+  ggsave(file.path(d, "main_fig_timecourse_3panels.pdf"), plot = p_3panel, width = 5.2, height = 9.5, device = cairo_pdf)
+  ggsave(file.path(d, "main_fig_timecourse_3panels.png"), plot = p_3panel, width = 5.2, height = 9.5, dpi = 300)
+}
 
 # 4. pairwise Pearson correlation heatmap on VST vectors (complete linkage, Euclidean distance)
 expressed_targets <- thiamine_res %>% filter(passed_filter == TRUE)
